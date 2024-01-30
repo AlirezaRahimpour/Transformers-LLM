@@ -1,3 +1,4 @@
+# Attention is all you need paper. (only the decoder part for next char prediction the same as GPT)
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
