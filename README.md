@@ -1,5 +1,5 @@
-# Transformers-LLM-LVM
+# Transformers-LLM
 My reimplementations of some of the attention-based models. Work in progress. 
-- [x] Pretraining transformer encoder
-- [ ] Fine-tune for specific data 
+- [x] Pretraining the transformer decoder 
+- [ ] Finetune for our specific data 
 
