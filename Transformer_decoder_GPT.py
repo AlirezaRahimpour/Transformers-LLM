@@ -19,10 +19,11 @@ dropout = 0.0
 
 torch.manual_seed(1337)
 
-# input.txt to be used as sample data
+# input.txt to be used as sample data. Can be any text file! The whole internet?! :) 
 with open('input.txt', 'r', encoding='utf-8') as f:
     text = f.read()
 
+# Tokenize
 # here are all the unique characters that occur in this text
 chars = sorted(list(set(text)))
 vocab_size = len(chars)
@@ -78,9 +79,9 @@ class Head(nn.Module):
         B,T,C = x.shape
         k = self.key(x)   # (B,T,C)
         q = self.query(x) # (B,T,C)
-        # compute attention scores ("affinities")
+        # compute attention scores ("affinities") and normalize them
         wei = q @ k.transpose(-2,-1) * C**-0.5 # (B, T, C) @ (B, C, T) -> (B, T, T)
-        wei = wei.masked_fill(self.tril[:T, :T] == 0, float('-inf')) # (B, T, T)
+        wei = wei.masked_fill(self.tril[:T, :T] == 0, float('-inf')) # (B, T, T)  No need to see the future tokens (since we are decoding!)
         wei = F.softmax(wei, dim=-1) # (B, T, T)
         wei = self.dropout(wei)
         # perform the weighted aggregation of the values
@@ -126,11 +127,12 @@ class Block(nn.Module):
         head_size = n_embd // n_head
         self.sa = MultiHeadAttention(n_head, head_size)
         self.ffwd = FeedFoward(n_embd)
+        # We need two layer norm (see the diagram in the paper)
         self.ln1 = nn.LayerNorm(n_embd)
         self.ln2 = nn.LayerNorm(n_embd)
 
     def forward(self, x):
-        x = x + self.sa(self.ln1(x))
+        x = x + self.sa(self.ln1(x)) # Adding the skip connections
         x = x + self.ffwd(self.ln2(x))
         return x
 
@@ -152,7 +154,7 @@ class BigramLanguageModel(nn.Module):
         # idx and targets are both (B,T) tensor of integers
         tok_emb = self.token_embedding_table(idx) # (B,T,C)
         pos_emb = self.position_embedding_table(torch.arange(T, device=device)) # (T,C)
-        x = tok_emb + pos_emb # (B,T,C) BROADCASTING!
+        x = tok_emb + pos_emb # (B,T,C) adding the pos emb.
         x = self.blocks(x) # (B,T,C)
         x = self.ln_f(x) # (B,T,C)
         logits = self.lm_head(x) # (B,T,vocab_size)
